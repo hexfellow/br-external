@@ -1,0 +1,12 @@
+[Unit]
+Description=Network Configurator Service
+
+[Service]
+Type=simple
+User=root
+Restart=on-failure
+RestartSec=5s
+ExecStart=/usr/bin/network-configurator -c /userdata/nc.json
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+config BR2_PACKAGE_HEXFELLOW_HELLO_WORLD
+	bool "hexfellow-hello-world"
+	help
+	  Simple hello world program in C, to demonstrate
+	  how to add packages to buildroot.
+
+	  https://github.com/hexfellow/hexfellow-hello-world

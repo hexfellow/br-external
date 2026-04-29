@@ -1,0 +1,11 @@
+--- a/os_dep/linux/os_intfs.c
++++ b/os_dep/linux/os_intfs.c
+@@ -22,6 +22,8 @@ MODULE_DESCRIPTION("Realtek Wireless Lan
+ MODULE_AUTHOR("Realtek Semiconductor Corp.");
+ MODULE_VERSION(DRIVERVERSION);
+ 
++MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
++
+ /* module param defaults */
+ int rtw_chip_version = 0x00;
+ int rtw_rfintfs = HWPI;

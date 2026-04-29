@@ -1,0 +1,34 @@
+#
+# This systemd service ensures that a specific SSH public key exists in
+# /root/.ssh/authorized_keys. It's a 'oneshot' service, meaning it runs
+# once and then exits.
+#
+# To install:
+# 1. Replace the placeholder SSH key in the ExecStart line with your actual public key.
+# 2. Copy this file to /etc/systemd/system/add-ssh-key.service
+# 3. Reload the systemd daemon: systemctl daemon-reload
+# 4. Enable the service to run on boot: systemctl enable add-ssh-key.service
+# 5. Start the service immediately: systemctl start add-ssh-key.service
+
+[Unit]
+Description=Create /root/.ssh/authorized_keys if it does not exist
+# This service should run after the network is up, as it's a common dependency,
+# though not strictly required for this specific file operation.
+After=network.target
+
+[Service]
+# Type=oneshot means this service runs a single task and then terminates.
+Type=oneshot
+RemainAfterExit=true
+
+# The entire logic is executed in a single command line using busybox ash.
+# It checks if the authorized_keys file exists. If it does not (! -f),
+# it executes the block of commands to create the directory and the file,
+# set the correct permissions, and add the public key.
+# ExecStart=/bin/sh -c 'if [ ! -f /root/.ssh/authorized_keys ]; then mkdir -p /root/.ssh; chmod 700 /root/.ssh; echo "{CHANGE KEYS TO YOUR OWN!}" >> /root/.ssh/authorized_keys; chmod 600 /root/.ssh/authorized_keys; echo "SSH key added."; else echo "SSH key already exists."; fi'
+ExecStart=echo "CHANGE KEYS TO YOUR OWN!"
+
+[Install]
+# This line allows the service to be started automatically during boot
+# when multi-user mode is reached.
+WantedBy=multi-user.target

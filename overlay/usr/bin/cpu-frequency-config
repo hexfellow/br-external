@@ -1,0 +1,25 @@
+#!/bin/ash
+
+echo 4 > /proc/irq/35/smp_affinity # can2 to CPU core 3 only
+
+echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+echo -n "scaling_governer is now "
+cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+
+echo -n "CPU frequency is now "
+cat /sys/devices/system/cpu/cpufreq/policy0/cpuinfo_cur_freq
+
+cd /sys/devices/system/cpu
+
+# Loop through all cpu directories (cpu0, cpu1, cpu2, etc.)
+for cpu_dir in cpu[0-9]*; do
+    # Check if the directory exists and has the cpuidle/state1/disable file
+    if [ -d "$cpu_dir" ] && [ -f "$cpu_dir/cpuidle/state1/disable" ]; then
+        echo "Disabling state1 for $cpu_dir"
+        echo 1 > "$cpu_dir/cpuidle/state1/disable"
+    else
+        echo "Skipping $cpu_dir - cpuidle/state1/disable not found"
+    fi
+done
+
+echo "Completed disabling state1 for all available CPUs"
