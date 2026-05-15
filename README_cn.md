@@ -4,7 +4,7 @@
 
 ## 构建流程
 
-1. 在你开始构建之前，记得先修改 `overlay/usr/lib/systemd/system/ssh-key.service` 添加你自己的 SSH 公钥，这样你就可以更容易地访问板子。
+1. 在你开始构建之前，记得先修改 `overlay/usr/lib/systemd/system/ssh-key.service` 添加你自己的 SSH 公钥，这样你就可以更容易地访问板子。当然也可以不改，然后使用 usb 串口登录系统后面再加进来
 
 ```bash
 git clone https://github.com/buildroot/buildroot -b 2025.02.1 buildroot
@@ -14,11 +14,41 @@ make BR2_EXTERNAL=../br-external hexfellow_geek_ctrl_defconfig
 make
 ```
 
+
 ---
 
-## 如何向 br-external 添加自定义包
+## 临时测试软件
 
-本节以 `hexfellow-hello-world` 包为例，讲解如何向这个 Buildroot external tree 添加新的软件包。
+开发期间需要经常改变自己的软件包，每次都用 buildroot 显然不太方便。我们可以在电脑上完成交叉编译然后 scp 到板子上进行测试。这里用一个新建的 cargo 项目为例。
+
+首先，你需要已经完成 [构建流程](#构建流程)，并且准备好交叉编译工具链。
+
+```bash
+cargo new hello-world
+cd hello-world
+echo 'fn main() {
+    println!("Hello, world!");
+}' > src/main.rs
+export BR=../buildroot/ # 这里假设你已经完成了构建流程
+env RUSTFLAGS='-C target-cpu=cortex-a53' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=$BR/output/host/bin/aarch64-linux-gcc CARGO_BUILD_TARGET=aarch64-unknown-linux-gnu PKG_CONFIG_SYSROOT_DIR=$BR/output/staging PKG_CONFIG=$BR/output/host/usr/bin/pkg-config cargo build --release # A53 to support RK3576 also
+scp ./target/aarch64-unknown-linux-gnu/release/hello-world root@172.18.25.50: # 改成你自己的板子 IP
+```
+
+然后，你就可以 ssh 进入系统，运行 `./hello-world` 看到输出 `Hello, world!` 了。
+
+默认只读挂载了 `/`, 如果需要把东西放到 `/userdata` 和 `/root` 之外的地方，可以运行 `mount -o remount,rw /`。文件写完之后一定要运行 `sync` 同步一下，不然断电后数据可能丢失。
+
+---
+
+## 永久添加软件包（二进制）
+
+你可以将刚刚编译好的 `hello-world` 放到 `overlay/usr/bin` 中。并向 `overlay/usr/lib/systemd/system` 中添加一个服务文件，这样系统启动时就会自动运行 `hello-world`。
+
+---
+
+## 永久添加软件包（源码形式）
+
+本节以 `hexfellow-hello-world` 包为例，讲解如何向这个 Buildroot external tree 添加新的软件包。此节并非必要，如果你只是想临时测试软件，可以看上一节。
 
 ### 背景知识
 

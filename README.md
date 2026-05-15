@@ -4,7 +4,7 @@
 
 ## Build Process
 
-1. Before you start building, remember to modify `overlay/usr/lib/systemd/system/ssh-key.service` to add your own SSH public key, so you can access the board more easily.
+1. Before you start building, remember to modify `overlay/usr/lib/systemd/system/ssh-key.service` to add your own SSH public key, so you can access the board more easily. Of course you can also skip this and use the USB serial port to log in and add it later.
 
 ```bash
 git clone https://github.com/buildroot/buildroot -b 2025.02.1 buildroot
@@ -16,9 +16,38 @@ make
 
 ---
 
-## How to Add Custom Packages to br-external
+## Temporary Software Testing
 
-This section uses the `hexfellow-hello-world` package as an example to explain how to add new packages to this Buildroot external tree.
+During development, you'll often need to iterate on your software packages quickly — using Buildroot each time is obviously inconvenient. Instead, you can cross-compile on your computer and then scp the binaries to the board for testing. Here's an example using a new Cargo project.
+
+First, make sure you have completed the [Build Process](#build-process) and have the cross-compilation toolchain ready.
+
+```bash
+cargo new hello-world
+cd hello-world
+echo 'fn main() {
+    println!("Hello, world!");
+}' > src/main.rs
+export BR=../buildroot/ # Assuming you have completed the build process
+env RUSTFLAGS='-C target-cpu=cortex-a53' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=$BR/output/host/bin/aarch64-linux-gcc CARGO_BUILD_TARGET=aarch64-unknown-linux-gnu PKG_CONFIG_SYSROOT_DIR=$BR/output/staging PKG_CONFIG=$BR/output/host/usr/bin/pkg-config cargo build --release # A53 to support RK3576 also
+scp ./target/aarch64-unknown-linux-gnu/release/hello-world root@172.18.25.50: # Change to your board's IP
+```
+
+Then, SSH into the system and run `./hello-world` — you should see `Hello, world!`.
+
+By default, `/` is mounted read-only. If you need to place files outside `/userdata` and `/root`, run `mount -o remount,rw /`. Always run `sync` after writing files, otherwise data may be lost on power failure.
+
+---
+
+## Adding Packages Permanently (Binary)
+
+You can place the compiled `hello-world` binary into `overlay/usr/bin`. Then add a service file to `overlay/usr/lib/systemd/system` so that `hello-world` runs automatically at boot.
+
+---
+
+## Adding Packages Permanently (Source Form)
+
+This section uses the `hexfellow-hello-world` package as an example to explain how to add new packages to this Buildroot external tree. This section is not necessary if you only want to test software temporarily — see the previous section instead.
 
 ### Background
 
