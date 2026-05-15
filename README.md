@@ -28,7 +28,7 @@ cd hello-world
 echo 'fn main() {
     println!("Hello, world!");
 }' > src/main.rs
-export BR=../buildroot/ # Assuming you have completed the build process
+export BR=/home/kisonhe/buildroot/ # Assuming you have completed the build process; must be an absolute path, not a relative one
 env RUSTFLAGS='-C target-cpu=cortex-a53' CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=$BR/output/host/bin/aarch64-linux-gcc CARGO_BUILD_TARGET=aarch64-unknown-linux-gnu PKG_CONFIG_SYSROOT_DIR=$BR/output/staging PKG_CONFIG=$BR/output/host/usr/bin/pkg-config cargo build --release # A53 to support RK3576 also
 scp ./target/aarch64-unknown-linux-gnu/release/hello-world root@172.18.25.50: # Change to your board's IP
 ```
